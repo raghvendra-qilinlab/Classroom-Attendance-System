@@ -4,7 +4,9 @@ from .views import (
     UserMeView,
     StudentListView,
     AttendanceListView,
-    AttendanceUpsertView
+    AttendanceUpsertView,
+    StudentAttendanceListView,
+    StudentAbsenceReasonUpdateView
 )
 
 urlpatterns = [
@@ -15,4 +17,8 @@ urlpatterns = [
     path('teacher/students/', StudentListView.as_view(), name='student_list'),
     path('teacher/attendance/', AttendanceListView.as_view(), name='attendance_list'),
     path('teacher/attendance/mark/', AttendanceUpsertView.as_view(), name='attendance_mark'),
+    
+    # Student Routes
+    path('student/attendance/', StudentAttendanceListView.as_view(), name='student_attendance_list'),
+    path('student/attendance/<int:pk>/reason/', StudentAbsenceReasonUpdateView.as_view(), name='student_absence_reason_update'),
 ]

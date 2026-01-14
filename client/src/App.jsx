@@ -2,13 +2,15 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
+import StudentDashboard from './pages/student/StudentDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
 const Home = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
   if (user.role === 'TEACHER') return <Navigate to="/teacher" />;
-  return <div>Student Dashboard (Coming Soon)</div>;
+  if (user.role === 'STUDENT') return <Navigate to="/student" />;
+  return <Navigate to="/login" />;
 };
 
 function App() {
@@ -24,6 +26,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['TEACHER']}>
                   <TeacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/student"
+              element={
+                <ProtectedRoute allowedRoles={['STUDENT']}>
+                  <StudentDashboard />
                 </ProtectedRoute>
               }
             />
