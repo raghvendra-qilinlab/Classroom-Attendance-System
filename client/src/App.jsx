@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
+import TeacherAnalytics from './pages/teacher/TeacherAnalytics';
 import StudentDashboard from './pages/student/StudentDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -26,6 +27,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['TEACHER']}>
                   <TeacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/teacher/analytics"
+              element={
+                <ProtectedRoute allowedRoles={['TEACHER']}>
+                  <TeacherAnalytics />
                 </ProtectedRoute>
               }
             />

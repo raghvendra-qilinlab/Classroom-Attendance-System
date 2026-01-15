@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../api';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
-import { Calendar as CalendarIcon, TrendingUp, CheckCircle2, XCircle, Users, MessageSquare, X } from 'lucide-react';
+import { Calendar as CalendarIcon, TrendingUp, CheckCircle2, XCircle, Users, MessageSquare, X, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const StudentDashboard = () => {
     const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -12,6 +14,8 @@ const StudentDashboard = () => {
     const [reason, setReason] = useState('');
     const [saving, setSaving] = useState(false);
     const [msg, setMsg] = useState('');
+    const { logout } = useAuth();
+    const navigate = useNavigate();
 
     const fetchAttendance = useCallback(async () => {
         setLoading(true);
@@ -29,6 +33,11 @@ const StudentDashboard = () => {
     useEffect(() => {
         fetchAttendance();
     }, [fetchAttendance]);
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
     const handleUpdateReason = async () => {
         if (!selectedRecord) return;
@@ -90,11 +99,20 @@ const StudentDashboard = () => {
         <div className="min-h-screen p-6 animate-fade-in">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="mb-8 animate-slide-up">
-                    <h1 className="text-4xl font-bold mb-2">
-                        <span className="gradient-text">My Attendance</span>
-                    </h1>
-                    <p className="text-gray-600">View your attendance records and manage absence reasons</p>
+                <div className="mb-8 animate-slide-up flex items-center justify-between">
+                    <div>
+                        <h1 className="text-4xl font-bold mb-2">
+                            <span className="gradient-text">My Attendance</span>
+                        </h1>
+                        <p className="text-gray-600">View your attendance records and manage absence reasons</p>
+                    </div>
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                    </button>
                 </div>
 
                 {/* Statistics Cards */}

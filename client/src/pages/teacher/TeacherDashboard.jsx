@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
 import { format } from 'date-fns';
-import { Save, Calendar, Users, CheckCircle2, XCircle, LogOut, TrendingUp } from 'lucide-react';
+import { Save, Calendar, Users, CheckCircle2, XCircle, LogOut, TrendingUp, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -102,13 +102,22 @@ const TeacherDashboard = () => {
                         </h1>
                         <p className="text-gray-600">Track and manage student attendance efficiently</p>
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        Logout
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => navigate('/teacher/analytics')}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:shadow-lg transition-all duration-200"
+                        >
+                            <BarChart3 className="w-4 h-4" />
+                            Analytics
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Logout
+                        </button>
+                    </div>
                 </div>
 
                 {/* Statistics Cards */}
@@ -185,8 +194,8 @@ const TeacherDashboard = () => {
                         <div className="flex items-center gap-4">
                             {msg && (
                                 <div className={`px-4 py-2 rounded-xl font-medium animate-fade-in ${msg.includes('Error') || msg.includes('Failed')
-                                        ? 'bg-red-50 text-red-700 border-2 border-red-200'
-                                        : 'bg-green-50 text-green-700 border-2 border-green-200'
+                                    ? 'bg-red-50 text-red-700 border-2 border-red-200'
+                                    : 'bg-green-50 text-green-700 border-2 border-green-200'
                                     }`}>
                                     {msg}
                                 </div>

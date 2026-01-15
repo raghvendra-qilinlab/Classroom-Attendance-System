@@ -6,6 +6,7 @@ from .serializers import UserSerializer, CustomTokenObtainPairSerializer, Studen
 from .models import User, AttendanceRecord
 from django.db import transaction
 from datetime import datetime
+from django.db.models import Count, Q
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -137,3 +138,127 @@ class StudentAbsenceReasonUpdateView(generics.UpdateAPIView):
         
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+# Teacher Analytics APIs
+class ClassMonthlySummaryView(APIView):
+    """
+    Get aggregated attendance stats for the entire class for a specific month.
+    Query parameter: month (YYYY-MM format)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if user.role != User.Role.TEACHER:
+            return Response({'error': 'Only teachers can access this data'}, status=status.HTTP_403_FORBIDDEN)
+
+        month_str = request.query_params.get('month')
+        if not month_str:
+            return Response({'error': 'Month parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            year, month = map(int, month_str.split('-'))
+            
+            # Get all records for this month
+            records = AttendanceRecord.objects.filter(
+                date__year=year,
+                date__month=month
+            )
+
+            # Overall stats
+            total_records = records.count()
+            present_count = records.filter(status=AttendanceRecord.Status.PRESENT).count()
+            absent_count = records.filter(status=AttendanceRecord.Status.ABSENT).count()
+            attendance_rate = (present_count / total_records * 100) if total_records > 0 else 0
+
+            # Daily breakdown
+            # We want to group by date. 
+            # Since we are using simple Django ORM, let's just iterate or use values().
+            # values('date') will group by date if we annotate.
+            from django.db.models import Count, Q
+            
+            daily_stats = records.values('date').annotate(
+                present=Count('id', filter=Q(status=AttendanceRecord.Status.PRESENT)),
+                absent=Count('id', filter=Q(status=AttendanceRecord.Status.ABSENT)),
+                total=Count('id')
+            ).order_by('date')
+
+            # Format daily stats
+            daily_breakdown = []
+            for day in daily_stats:
+                rate = (day['present'] / day['total'] * 100) if day['total'] > 0 else 0
+                daily_breakdown.append({
+                    'date': day['date'],
+                    'present': day['present'],
+                    'absent': day['absent'],
+                    'rate': round(rate, 1)
+                })
+
+            return Response({
+                'month': month_str,
+                'overview': {
+                    'total_records': total_records,
+                    'present': present_count,
+                    'absent': absent_count,
+                    'attendance_rate': round(attendance_rate, 1)
+                },
+                'daily': daily_breakdown
+            })
+
+        except ValueError:
+            return Response({'error': 'Invalid month format. Use YYYY-MM'}, status=status.HTTP_400_BAD_REQUEST)
+
+class StudentMonthlySummaryView(APIView):
+    """
+    Get aggregated stats for a specific student for a specific month.
+    Query parameters: student_id, month (YYYY-MM format)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        if user.role != User.Role.TEACHER:
+            return Response({'error': 'Only teachers can access this data'}, status=status.HTTP_403_FORBIDDEN)
+
+        month_str = request.query_params.get('month')
+        student_id = request.query_params.get('student_id')
+
+        if not month_str or not student_id:
+            return Response({'error': 'Month and student_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            year, month = map(int, month_str.split('-'))
+            
+            records = AttendanceRecord.objects.filter(
+                student_id=student_id,
+                date__year=year,
+                date__month=month
+            ).order_by('date')
+
+            if not records.exists():
+                # Check if student exists just to be sure? Or just return empty stats.
+                # Returning empty stats is fine.
+                pass
+
+            total = records.count()
+            present = records.filter(status=AttendanceRecord.Status.PRESENT).count()
+            absent = records.filter(status=AttendanceRecord.Status.ABSENT).count()
+            rate = (present / total * 100) if total > 0 else 0
+
+            # List absences with reasons
+            absences = records.filter(status=AttendanceRecord.Status.ABSENT).values('id', 'date', 'absence_reason')
+
+            return Response({
+                'student_id': student_id,
+                'month': month_str,
+                'stats': {
+                    'total': total,
+                    'present': present,
+                    'absent': absent,
+                    'rate': round(rate, 1)
+                },
+                'absences': list(absences)
+            })
+
+        except ValueError:
+            return Response({'error': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
