@@ -262,3 +262,94 @@ class StudentMonthlySummaryView(APIView):
 
         except ValueError:
             return Response({'error': 'Invalid format'}, status=status.HTTP_400_BAD_REQUEST)
+
+class BulkAttendanceView(APIView):
+    """
+    Mark attendance for a specific student for an entire month.
+    POST parameters: student_id, month (YYYY-MM), status (PRESENT/ABSENT), overwrite (bool)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if user.role != User.Role.TEACHER:
+            return Response({'error': 'Only teachers can perform this action'}, status=status.HTTP_403_FORBIDDEN)
+
+        student_id = request.data.get('student_id')
+        month_str = request.data.get('month')
+        status_val = request.data.get('status')
+        # specific check for overwrite, default True if not present to maintain backward compatibility
+        overwrite = request.data.get('overwrite', True) 
+
+        if not all([student_id, month_str, status_val]):
+            return Response({'error': 'student_id, month, and status are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if status_val not in [AttendanceRecord.Status.PRESENT, AttendanceRecord.Status.ABSENT]:
+            return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            year, month = map(int, month_str.split('-'))
+            
+            # Calculate all days in the month
+            import calendar
+            num_days = calendar.monthrange(year, month)[1]
+            
+            from datetime import date
+            today = date.today()
+
+            # Prevent future dates if it's the current month (or past)
+            # Logic: If month is future, don't mark anything? Or simply clamp to today?
+            # User request: "attendance should be done till current date, not future date"
+            
+            # Generate valid dates up to today
+            dates = []
+            for day in range(1, num_days + 1):
+                current_date = date(year, month, day)
+                if current_date > today:
+                    continue
+                dates.append(current_date)
+            
+            if not dates:
+                return Response({'error': 'No valid dates to mark (cannot mark future months)'}, status=status.HTTP_400_BAD_REQUEST)
+
+            with transaction.atomic():
+                if overwrite:
+                    # Delete existing records for VALID dates only
+                    AttendanceRecord.objects.filter(
+                        student_id=student_id,
+                        date__in=dates
+                    ).delete()
+                    
+                    final_dates_to_create = dates
+                else:
+                    # Find existing records for the month/dates we are about to mark
+                    existing_dates = AttendanceRecord.objects.filter(
+                        student_id=student_id,
+                        date__in=dates
+                    ).values_list('date', flat=True)
+                    
+                    # Filter out dates that already have records
+                    final_dates_to_create = [d for d in dates if d not in existing_dates]
+
+                # Bulk create new records
+                records_to_create = [
+                    AttendanceRecord(
+                        student_id=student_id,
+                        date=d,
+                        status=status_val,
+                        marked_by=user
+                    ) for d in final_dates_to_create
+                ]
+                
+                if records_to_create:
+                    AttendanceRecord.objects.bulk_create(records_to_create)
+
+            return Response({
+                'message': f'Successfully marked {len(records_to_create)} days as {status_val}',
+                'count': len(records_to_create)
+            })
+
+        except ValueError:
+            return Response({'error': 'Invalid month format. Use YYYY-MM'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

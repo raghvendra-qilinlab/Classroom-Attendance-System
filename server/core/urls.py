@@ -8,7 +8,8 @@ from .views import (
     StudentAttendanceListView,
     StudentAbsenceReasonUpdateView,
     ClassMonthlySummaryView,
-    StudentMonthlySummaryView
+    StudentMonthlySummaryView,
+    BulkAttendanceView
 )
 
 urlpatterns = [
@@ -27,4 +28,7 @@ urlpatterns = [
     # Teacher Analytics Routes
     path('teacher/analytics/class/', ClassMonthlySummaryView.as_view(), name='class_analytics'),
     path('teacher/analytics/student/', StudentMonthlySummaryView.as_view(), name='student_analytics'),
+    
+    # Bulk Attendance
+    path('teacher/attendance/bulk/', BulkAttendanceView.as_view(), name='bulk_attendance'),
 ]
