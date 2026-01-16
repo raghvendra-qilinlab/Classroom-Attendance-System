@@ -14,7 +14,7 @@ const TeacherDashboard = () => {
     const [saving, setSaving] = useState(false);
     const [msg, setMsg] = useState('');
     const [showBulkModal, setShowBulkModal] = useState(false);
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -109,7 +109,7 @@ const TeacherDashboard = () => {
                 <div className="mb-8 flex items-center justify-between animate-slide-up">
                     <div>
                         <h1 className="text-4xl font-bold mb-2">
-                            <span className="gradient-text">Daily Attendance</span>
+                            <span className="gradient-text">Welcome, {user?.first_name || user?.username}</span>
                         </h1>
                         <p className="text-gray-600">Track and manage student attendance efficiently</p>
                     </div>
@@ -248,47 +248,59 @@ const TeacherDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {students.map((student, index) => (
-                                        <tr
-                                            key={student.id}
-                                            className="hover:bg-purple-50/50 transition-colors duration-200 animate-fade-in"
-                                            style={{ animationDelay: `${0.05 * index}s` }}
-                                        >
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-md">
-                                                        {(student.first_name || student.username).charAt(0).toUpperCase()}
+                                    {students.length > 0 ? (
+                                        students.map((student, index) => (
+                                            <tr
+                                                key={student.id}
+                                                className="hover:bg-purple-50/50 transition-colors duration-200 animate-fade-in"
+                                                style={{ animationDelay: `${0.05 * index}s` }}
+                                            >
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold shadow-md">
+                                                            {(student.first_name || student.username).charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-semibold text-gray-900">
+                                                                {student.first_name || student.username} {student.last_name}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="font-semibold text-gray-900">
-                                                            {student.first_name || student.username} {student.last_name}
-                                                        </p>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-600">
+                                                    {student.username}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex justify-center gap-3">
+                                                        <button
+                                                            onClick={() => handleStatusChange(student.id, 'PRESENT')}
+                                                            className={attendance[student.id] === 'PRESENT' ? 'btn-success' : 'badge-present-inactive'}
+                                                        >
+                                                            <CheckCircle2 className="w-4 h-4 inline mr-1" />
+                                                            Present
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleStatusChange(student.id, 'ABSENT')}
+                                                            className={attendance[student.id] === 'ABSENT' ? 'btn-danger' : 'badge-absent-inactive'}
+                                                        >
+                                                            <XCircle className="w-4 h-4 inline mr-1" />
+                                                            Absent
+                                                        </button>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                                                {student.username}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex justify-center gap-3">
-                                                    <button
-                                                        onClick={() => handleStatusChange(student.id, 'PRESENT')}
-                                                        className={attendance[student.id] === 'PRESENT' ? 'btn-success' : 'badge-present-inactive'}
-                                                    >
-                                                        <CheckCircle2 className="w-4 h-4 inline mr-1" />
-                                                        Present
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleStatusChange(student.id, 'ABSENT')}
-                                                        className={attendance[student.id] === 'ABSENT' ? 'btn-danger' : 'badge-absent-inactive'}
-                                                    >
-                                                        <XCircle className="w-4 h-4 inline mr-1" />
-                                                        Absent
-                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="3" className="px-6 py-12 text-center">
+                                                <div className="flex flex-col items-center justify-center text-gray-500">
+                                                    <Users className="w-12 h-12 mb-4 text-gray-300" />
+                                                    <p className="text-lg font-medium">No students found</p>
+                                                    <p className="text-sm">There are no students enrolled in the system yet.</p>
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                    )}
                                 </tbody>
                             </table>
                         </div>

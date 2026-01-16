@@ -14,7 +14,7 @@ const StudentDashboard = () => {
     const [reason, setReason] = useState('');
     const [saving, setSaving] = useState(false);
     const [msg, setMsg] = useState('');
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const navigate = useNavigate();
 
     const fetchAttendance = useCallback(async () => {
@@ -102,7 +102,7 @@ const StudentDashboard = () => {
                 <div className="mb-8 animate-slide-up flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl font-bold mb-2">
-                            <span className="gradient-text">My Attendance</span>
+                            <span className="gradient-text">Welcome, {user?.first_name || user?.username}</span>
                         </h1>
                         <p className="text-gray-600">View your attendance records and manage absence reasons</p>
                     </div>

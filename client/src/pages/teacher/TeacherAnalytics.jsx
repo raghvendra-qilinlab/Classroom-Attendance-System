@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
-import { format, eachDayOfInterval, endOfMonth, startOfMonth, isSameDay } from 'date-fns';
-import { BarChart3, Users, Calendar, TrendingUp, User, ArrowLeft, ArrowRight, Download, CheckCircle2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { BarChart3, Users, Calendar, TrendingUp, User, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const TeacherAnalytics = () => {
@@ -9,6 +9,7 @@ const TeacherAnalytics = () => {
     const [activeTab, setActiveTab] = useState('class'); // 'class' or 'student'
     const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     // Class Data
     const [classStats, setClassStats] = useState(null);
@@ -46,16 +47,19 @@ const TeacherAnalytics = () => {
             }
         } catch (err) {
             console.error("Failed to fetch students", err);
+            setError("Failed to load student list.");
         }
     };
 
     const fetchClassAnalytics = async () => {
         setLoading(true);
+        setError(null);
         try {
             const res = await api.get(`/teacher/analytics/class/?month=${selectedMonth}`);
             setClassStats(res.data);
         } catch (err) {
             console.error("Failed to fetch class analytics", err);
+            setError("Failed to load class analytics data.");
         } finally {
             setLoading(false);
         }
@@ -64,11 +68,13 @@ const TeacherAnalytics = () => {
     const fetchStudentAnalytics = async () => {
         if (!selectedStudent) return;
         setLoading(true);
+        setError(null);
         try {
             const res = await api.get(`/teacher/analytics/student/?month=${selectedMonth}&student_id=${selectedStudent}`);
             setStudentStats(res.data);
         } catch (err) {
             console.error("Failed to fetch student analytics", err);
+            setError("Failed to load student analytics data.");
         } finally {
             setLoading(false);
         }
@@ -95,6 +101,13 @@ const TeacherAnalytics = () => {
                         </button>
                     </div>
                 </div>
+
+                {error && (
+                    <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 font-medium animate-fade-in flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                        {error}
+                    </div>
+                )}
 
                 {/* Tabs & Filters */}
                 <div className="glass-card rounded-2xl p-4 mb-8 shadow-sm">
